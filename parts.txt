@@ -1,0 +1,7 @@
+Battery|1000|MG5,MG6
+Battery|1100|MG ZS
+Wipers|150|MG5,MG ZS
+Wipers|160|MG6
+Oil flt|200|MG5,MG6,MG ZS
+Oil 10K|900|All
+
