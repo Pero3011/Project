@@ -213,7 +213,7 @@ void services_edit() {
     cout << "<--- Welcome to the Services section --->" << endl;
     int answer;
     do {
-        cout << "Add a service or Update an existing service(Add[1],update[2] or exit[3]): \n ";
+        cout << "Add[1]\n"<<"update[2]\n"<< "exit[3]\n";
         cin >> answer;
         if (answer == 1) {
             //variables
