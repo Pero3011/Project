@@ -277,269 +277,6 @@ void services_edit() {
     saveservices();
 }
 
-void loadschedule() {
-    std::ifstream inFile("schedule.txt");
-
-    schedulesCount = 0;
-    schedules = new schedule[MAX_SCHEDULES];
-
-    std::string line;
-    while (std::getline(inFile, line)) {
-        if (line.find("Schedule #") != std::string::npos) {
-            schedulesCount++;
-        }
-        else if (schedulesCount > 0) {
-            schedule& curr = schedules[schedulesCount - 1];
-
-            if (line.find("Model: ") == 0) {
-                curr.model = line.substr(7);
-            }
-            else if (line.find("Year: ") == 0) {
-                curr.year = std::stoi(line.substr(6));
-            }
-            else if (line.find("Mileage: ") == 0) {
-                curr.mileage = std::stoi(line.substr(9));
-            }
-            else if (line.find("Interval: Every ") == 0) {
-                curr.months = std::stoi(line.substr(16));
-            }
-            else if (line.find("Parts: ") == 0) {
-                std::string partsList = line.substr(7);
-                size_t pos = 0;
-                while ((pos = partsList.find(',')) != std::string::npos) {
-                    curr.partNames[curr.partNamesCount++] = partsList.substr(0, pos);
-                    partsList.erase(0, pos + 1);
-                }
-                curr.partNames[curr.partNamesCount++] = partsList;
-            }
-            else if (line.find("Services: ") == 0) {
-                std::string servicesList = line.substr(10);
-                size_t pos = 0;
-                while ((pos = servicesList.find(',')) != std::string::npos) {
-                    curr.serviceNames[curr.serviceNamesCount++] = servicesList.substr(0, pos);
-                    servicesList.erase(0, pos + 1);
-                }
-                curr.serviceNames[curr.serviceNamesCount++] = servicesList;
-            }
-        }
-    }
-    inFile.close();
-}
-void saveschedule() {
-    ofstream outFile("schedule.txt");  // Create or overwrite the file
-
-    if (!outFile.is_open()) {
-        cerr << "Error: Could not open schedule.txt for writing!" << endl;
-        return;
-    }
-
-    // Write header
-    outFile << "=== Maintenance Schedules ===\n";
-    outFile << "Total Schedules: " << schedulesCount << "\n\n";
-
-    // Write each schedule
-    for (int i = 0; i < schedulesCount; i++) {
-        outFile << "Schedule #" << i + 1 << "\n";
-        outFile << "Model: " << schedules[i].model << "\n";
-        outFile << "Year: " << schedules[i].year << "\n";
-        outFile << "Mileage: " << schedules[i].mileage << " km\n";
-        outFile << "Interval: Every " << schedules[i].months << " months\n";
-
-        // Write parts
-        outFile << "Parts: ";
-        for (int j = 0; j < schedules[i].partNamesCount; j++) {
-            outFile << schedules[i].partNames[j];
-            if (j < schedules[i].partNamesCount - 1) outFile << ", ";
-        }
-        outFile << "\n";
-
-        // Write services
-        outFile << "Services: ";
-        for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
-            outFile << schedules[i].serviceNames[j];
-            if (j < schedules[i].serviceNamesCount - 1) outFile << ", ";
-        }
-        outFile << "\n\n";
-    }
-
-    outFile.close();
-    cout << "Schedules successfully saved to schedule.txt" << endl;
-}
-void displaySchedules() {
-    if (schedulesCount == 0) {
-        cout << "No maintenance schedules available.\n";
-        return;
-    }
-
-    cout << "\n=== Maintenance Schedules ===\n";
-
-    for (int i = 0; i < schedulesCount; i++) {
-        cout << "\nSchedule #" << i + 1 << "\n";
-        cout << "---------------------------------\n";
-        cout << "Model: " << schedules[i].model << "\n";
-        cout << "Year: " << schedules[i].year << "\n";
-        cout << "Mileage: " << schedules[i].mileage << " km\n";
-        cout << "Interval: Every " << schedules[i].months << " months\n";
-
-        // Display parts
-        cout << "\nParts to Replace:\n";
-        if (schedules[i].partNamesCount == 0) {
-            cout << " - None\n";
-        }
-        else {
-            for (int j = 0; j < schedules[i].partNamesCount; j++) {
-                cout << " - " << schedules[i].partNames[j] << "\n";
-            }
-        }
-
-        // Display services
-        cout << "\nServices to Perform:\n";
-        if (schedules[i].serviceNamesCount == 0) {
-            cout << " - None\n";
-        }
-        else {
-            for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
-                cout << " - " << schedules[i].serviceNames[j] << "\n";
-            }
-        }
-
-        cout << "---------------------------------\n";
-    }
-
-    cout << "\nTotal Schedules: " << schedulesCount << "\n\n";
-}
-void schedule_edit() {
-    cout << "<--- Welcome to Maintenance Schedule --->" << endl;
-    int answer;
-    do {
-        cout << "[1] Add\n" << "[2] Update\n" << "[3] Quit\n";
-        cin >> answer;
-
-        if (answer == 1) {
-            if (schedulesCount >= MAX_SCHEDULES) {
-                cout << "Maximum schedules reached!" << endl;
-                continue;
-            }
-
-            schedule& newEntry = schedules[schedulesCount];
-            cout << "Enter the car model: ";
-            cin >> newEntry.model;
-            cout << "Enter the model year: ";
-            cin >> newEntry.year;
-            cout << "Enter the mileage of the car: ";
-            cin >> newEntry.mileage;
-            cout << "Enter maintenance interval (in months): ";
-            cin >> newEntry.months;
-
-            int partscounter;
-            cout << "How many parts do you want to add? ";
-            cin >> partscounter;
-
-            string partname;
-            cin.ignore();    // Clear the input buffer
-            for (int i = 0; i < partscounter && newEntry.partNamesCount < MAX_PARTS; i++) {
-                cout << "Enter part name #" << i + 1 << ": ";
-                getline(cin,partname);
-                transform(partname.begin(), partname.end(), partname.begin(), ::tolower); //transform any string to lower case to avoid user errors
-                newEntry.partNames[newEntry.partNamesCount++] = partname;
-            }
-
-            int servicecounter;
-            cout << "How many services do you want to add? ";
-            cin >> servicecounter;
-
-            string servicename;
-            cin.ignore();    // Clear the input buffer
-            for (int i = 0; i < servicecounter && newEntry.serviceNamesCount < MAX_SERVICES; i++) {
-                cout << "Enter service name #" << i + 1 << ": ";
-                getline(cin,servicename);
-                transform(servicename.begin(), servicename.end(), servicename.begin(), ::tolower); //transform any string to lower case to avoid user errors
-                newEntry.serviceNames[newEntry.serviceNamesCount++] = servicename;
-            }
-            schedulesCount++;
-            saveschedule();
-            displaySchedules();
-        }
-        else if (answer == 2) {
-            int answer;
-
-            displaySchedules();
-
-            cout << "What do you want to update the parts[1] or services[2]: ";
-            cin >> answer;
-            if (answer == 1) {
-                for (int i = 0; i < schedulesCount; i++) {
-                    cout << "Parts for schedule " << i + 1 << ":\n";
-                    for (int j = 0; j < schedules[i].partNamesCount; j++) {
-                        cout << " - " << schedules[i].partNames[j] << endl;
-                    }
-                }
-
-                string answer;
-                cout << "Choose the part you want to edit by its name: ";
-                cin.ignore();    // Clear the input buffer
-                getline(cin, answer);
-                transform(answer.begin(), answer.end(), answer.begin(), ::tolower);
-
-                bool found = false;
-                for (int i = 0; i < schedulesCount && !found; i++) {
-                    for (int j = 0; j < schedules[i].partNamesCount; j++) {
-                        if (answer == schedules[i].partNames[j]) {
-                            string partname;
-                            cout << "Enter the name of the new part: ";
-                            cin.ignore();    // Clear the input buffer
-                            getline(cin, partname);
-                            transform(partname.begin(), partname.end(), partname.begin(), ::tolower); //transform any string to lower case to avoid user errors
-                            schedules[i].partNames[j] = partname;
-                            found = true;
-                            displaySchedules();
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    cout << "Part not found!" << endl;
-                }
-            }
-            else if (answer == 2) {
-                for (int i = 0; i < schedulesCount; i++) {
-                    cout << "Services for schedule " << i + 1 << ":\n";
-                    for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
-                        cout << " - " << schedules[i].serviceNames[j] << endl;
-                    }
-                }
-
-                string answer;
-                cout << "Choose the service you want to edit by its name: ";
-                cin.ignore();    // Clear the input buffer
-                getline(cin, answer);
-                transform(answer.begin(), answer.end(), answer.begin(), ::tolower);
-
-                bool found = false;
-                cin.ignore();    // Clear the input buffer
-                for (int i = 0; i < schedulesCount && !found; i++) {
-                    for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
-                        if (answer == schedules[i].serviceNames[j]) {
-                            string servicename;
-                            cout << "Enter the name of the new service: ";
-                            getline(cin, servicename);
-                            transform(servicename.begin(), servicename.end(), servicename.begin(), ::tolower); //transform any string to lower case to avoid user errors
-                            schedules[i].serviceNames[j] = servicename;
-                            found = true;
-                            displaySchedules();
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    cout << "Service not found!" << endl;
-                }
-            }
-            saveschedule();
-        }
-    } while (answer != 3);
-}
-
 void loadParts() {
     ifstream file("parts.txt");
     if (!file) return;
@@ -708,6 +445,273 @@ void parts_edit() {
         }
         else if (answer != 3) {
             cout << "Invalid choice!!";
+        }
+    } while (answer != 3);
+}
+
+void loadschedule() {
+    std::ifstream inFile("schedule.txt");
+
+    schedulesCount = 0;
+    schedules = new schedule[MAX_SCHEDULES];
+
+    std::string line;
+    while (std::getline(inFile, line)) {
+        if (line.find("Schedule #") != std::string::npos) {
+            schedulesCount++;
+        }
+        else if (schedulesCount > 0) {
+            schedule& curr = schedules[schedulesCount - 1];
+
+            if (line.find("Model: ") == 0) {
+                curr.model = line.substr(7);
+            }
+            else if (line.find("Year: ") == 0) {
+                curr.year = std::stoi(line.substr(6));
+            }
+            else if (line.find("Mileage: ") == 0) {
+                curr.mileage = std::stoi(line.substr(9));
+            }
+            else if (line.find("Interval: Every ") == 0) {
+                curr.months = std::stoi(line.substr(16));
+            }
+            else if (line.find("Parts: ") == 0) {
+                std::string partsList = line.substr(7);
+                size_t pos = 0;
+                while ((pos = partsList.find(',')) != std::string::npos) {
+                    curr.partNames[curr.partNamesCount++] = partsList.substr(0, pos);
+                    partsList.erase(0, pos + 1);
+                }
+                curr.partNames[curr.partNamesCount++] = partsList;
+            }
+            else if (line.find("Services: ") == 0) {
+                std::string servicesList = line.substr(10);
+                size_t pos = 0;
+                while ((pos = servicesList.find(',')) != std::string::npos) {
+                    curr.serviceNames[curr.serviceNamesCount++] = servicesList.substr(0, pos);
+                    servicesList.erase(0, pos + 1);
+                }
+                curr.serviceNames[curr.serviceNamesCount++] = servicesList;
+            }
+        }
+    }
+    inFile.close();
+}
+void saveschedule() {
+    ofstream outFile("schedule.txt");  // Create or overwrite the file
+
+    if (!outFile.is_open()) {
+        cerr << "Error: Could not open schedule.txt for writing!" << endl;
+        return;
+    }
+
+    // Write header
+    outFile << "=== Maintenance Schedules ===\n";
+    outFile << "Total Schedules: " << schedulesCount << "\n\n";
+
+    // Write each schedule
+    for (int i = 0; i < schedulesCount; i++) {
+        outFile << "Schedule #" << i + 1 << "\n";
+        outFile << "Model: " << schedules[i].model << "\n";
+        outFile << "Year: " << schedules[i].year << "\n";
+        outFile << "Mileage: " << schedules[i].mileage << " km\n";
+        outFile << "Interval: Every " << schedules[i].months << " months\n";
+
+        // Write parts
+        outFile << "Parts: ";
+        for (int j = 0; j < schedules[i].partNamesCount; j++) {
+            outFile << schedules[i].partNames[j];
+            if (j < schedules[i].partNamesCount - 1) outFile << ", ";
+        }
+        outFile << "\n";
+
+        // Write services
+        outFile << "Services: ";
+        for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
+            outFile << schedules[i].serviceNames[j];
+            if (j < schedules[i].serviceNamesCount - 1) outFile << ", ";
+        }
+        outFile << "\n\n";
+    }
+
+    outFile.close();
+    cout << "Schedules successfully saved to schedule.txt" << endl;
+}
+void displaySchedules() {
+    if (schedulesCount == 0) {
+        cout << "No maintenance schedules available.\n";
+        return;
+    }
+
+    cout << "\n=== Maintenance Schedules ===\n";
+
+    for (int i = 0; i < schedulesCount; i++) {
+        cout << "\nSchedule #" << i + 1 << "\n";
+        cout << "---------------------------------\n";
+        cout << "Model: " << schedules[i].model << "\n";
+        cout << "Year: " << schedules[i].year << "\n";
+        cout << "Mileage: " << schedules[i].mileage << " km\n";
+        cout << "Interval: Every " << schedules[i].months << " months\n";
+
+        // Display parts
+        cout << "\nParts to Replace:\n";
+        if (schedules[i].partNamesCount == 0) {
+            cout << " - None\n";
+        }
+        else {
+            for (int j = 0; j < schedules[i].partNamesCount; j++) {
+                cout << " - " << schedules[i].partNames[j] << "\n";
+            }
+        }
+
+        // Display services
+        cout << "\nServices to Perform:\n";
+        if (schedules[i].serviceNamesCount == 0) {
+            cout << " - None\n";
+        }
+        else {
+            for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
+                cout << " - " << schedules[i].serviceNames[j] << "\n";
+            }
+        }
+
+        cout << "---------------------------------\n";
+    }
+
+    cout << "\nTotal Schedules: " << schedulesCount << "\n\n";
+}
+void schedule_edit() {
+    cout << "<--- Welcome to Maintenance Schedule --->" << endl;
+    int answer;
+    do {
+        cout << "[1] Add\n" << "[2] Update\n" << "[3] Quit\n";
+        cin >> answer;
+
+        if (answer == 1) {
+            if (schedulesCount >= MAX_SCHEDULES) {
+                cout << "Maximum schedules reached!" << endl;
+                continue;
+            }
+
+            schedule& newEntry = schedules[schedulesCount];
+            cout << "Enter the car model: ";
+            cin >> newEntry.model;
+            cout << "Enter the model year: ";
+            cin >> newEntry.year;
+            cout << "Enter the mileage of the car: ";
+            cin >> newEntry.mileage;
+            cout << "Enter maintenance interval (in months): ";
+            cin >> newEntry.months;
+
+            int partscounter;
+            cout << "How many parts do you want to add? ";
+            cin >> partscounter;
+
+            string partname;
+            display_parts();
+            cin.ignore();   // Clear the input buffer
+            for (int i = 0; i < partscounter && newEntry.partNamesCount < MAX_PARTS; i++) {
+                cout << "Enter part name #" << i + 1 << ": ";
+                getline(cin, partname);
+                transform(partname.begin(), partname.end(), partname.begin(), ::tolower); //transform any string to lower case to avoid user errors
+                newEntry.partNames[newEntry.partNamesCount++] = partname;
+            }
+
+            int servicecounter;
+            cout << "How many services do you want to add? ";
+            cin >> servicecounter;
+
+            string servicename;
+            displayServices();
+            cin.ignore();    // Clear the input buffer
+            for (int i = 0; i < servicecounter && newEntry.serviceNamesCount < MAX_SERVICES; i++) {
+                cout << "Enter service name #" << i + 1 << ": ";
+                getline(cin, servicename);
+                transform(servicename.begin(), servicename.end(), servicename.begin(), ::tolower); //transform any string to lower case to avoid user errors
+                newEntry.serviceNames[newEntry.serviceNamesCount++] = servicename;
+            }
+            schedulesCount++;
+            saveschedule();
+            displaySchedules();
+        }
+        else if (answer == 2) {
+            int answer;
+
+            displaySchedules();
+
+            cout << "What do you want to update the parts[1] or services[2]: ";
+            cin >> answer;
+            if (answer == 1) {
+                for (int i = 0; i < schedulesCount; i++) {
+                    cout << "Parts for schedule " << i + 1 << ":\n";
+                    for (int j = 0; j < schedules[i].partNamesCount; j++) {
+                        cout << " - " << schedules[i].partNames[j] << endl;
+                    }
+                }
+
+                string answer;
+                display_parts();
+                cout << "Choose the part you want to edit by its name: ";
+                cin.ignore();    // Clear the input buffer
+                getline(cin, answer);
+                transform(answer.begin(), answer.end(), answer.begin(), ::tolower);
+
+                bool found = false;
+                for (int i = 0; i < schedulesCount && !found; i++) {
+                    for (int j = 0; j < schedules[i].partNamesCount; j++) {
+                        if (answer == schedules[i].partNames[j]) {
+                            string partname;
+                            cout << "Enter the name of the new part: ";
+                            cin.ignore();    // Clear the input buffer
+                            getline(cin, partname);
+                            transform(partname.begin(), partname.end(), partname.begin(), ::tolower); //transform any string to lower case to avoid user errors
+                            schedules[i].partNames[j] = partname;
+                            found = true;
+                            displaySchedules();
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    cout << "Part not found!" << endl;
+                }
+            }
+            else if (answer == 2) {
+                for (int i = 0; i < schedulesCount; i++) {
+                    cout << "Services for schedule " << i + 1 << ":\n";
+                    for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
+                        cout << " - " << schedules[i].serviceNames[j] << endl;
+                    }
+                }
+
+                string answer;
+                displayServices();
+                cout << "Choose the service you want to edit by its name: ";
+                cin.ignore();    // Clear the input buffer
+                getline(cin, answer);
+                transform(answer.begin(), answer.end(), answer.begin(), ::tolower);
+
+                bool found = false;
+                cin.ignore();    // Clear the input buffer
+                for (int i = 0; i < schedulesCount && !found; i++) {
+                    for (int j = 0; j < schedules[i].serviceNamesCount; j++) {
+                        if (answer == schedules[i].serviceNames[j]) {
+                            string servicename;
+                            cout << "Enter the name of the new service: ";
+                            getline(cin, servicename);
+                            transform(servicename.begin(), servicename.end(), servicename.begin(), ::tolower); //transform any string to lower case to avoid user errors
+                            schedules[i].serviceNames[j] = servicename;
+                            found = true;
+                            displaySchedules();
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    cout << "Service not found!" << endl;
+                }
+            }
+            saveschedule();
         }
     } while (answer != 3);
 }
