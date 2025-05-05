@@ -1,0 +1,11 @@
+change oil|100  
+change tyres|200  
+change brake pads|250  
+engine tune-up|500  
+full inspection|300  
+transmission fluid change|350  
+ac recharge|150  
+radiator flush|200  
+battery replacement|400  
+clutch replacement|600  
+  

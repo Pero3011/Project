@@ -1,0 +1,46 @@
+=== Maintenance Schedules ===
+Total Schedules: 50
+
+Schedule #1
+Model: MG5
+Year: 2020
+Mileage: 10000 km
+Interval: Every 6 months
+Parts: oil 10k, wipers
+Services: change oil
+
+Schedule #2
+Model: MG5
+Year: 2021
+Mileage: 10000 km
+Interval: Every 6 months
+Parts: tyers
+Services: change tyers
+
+Schedule #3
+Model: MG6
+Year: 2022
+Mileage: 20000 km
+Interval: Every 12 months
+Parts: battery
+Services: change battery
+
+Schedule #4
+Model: Verna
+Year: 2005
+Mileage: 30000 km
+Interval: Every 12 months
+Parts: battery 
+Services: change tyers
+
+Schedule #5
+Model: Nissan
+Year: 2021
+Mileage: 5000 km
+Interval: Every 6 months
+Parts: wipers
+Services: change oil
+
+
+
+
