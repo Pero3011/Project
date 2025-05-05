@@ -213,9 +213,17 @@ void services_edit() {
     cout << "<--- Welcome to the Services section --->" << endl;
     int answer;
     do {
-        cout << "Add[1]\n"<<"update[2]\n"<< "exit[3]\n";
+        cout << " [1] - Dispalay Services \n";
+        cout << " [2] - Add a Service \n";
+        cout << " [3] - Update a Service \n";
+        cout << " [4] - Exit \n";
+        cout << "Enter your choice : ";
         cin >> answer;
         if (answer == 1) {
+            displayServices();
+            cout << "-----------------------\n";
+        }
+        else if (answer == 2) {
             //variables
             string name;
             float price;
@@ -242,9 +250,11 @@ void services_edit() {
                 cout << "Maximum services reached!" << endl;
             }
         }
-        else if (answer == 2) {
+        else if (answer == 3) {
             string answer;
             displayServices();
+
+            if (servicesCount == 0) { continue; }
             cout << "Choose a service to update by its name:\n";
             cin.ignore();    // Clear the input buffer
             getline(cin, answer);
@@ -267,15 +277,16 @@ void services_edit() {
                 cout << "Invalid service..Try Again!!" << endl;
             }
         }
-        else if (answer == 3) {
+        else if (answer == 4) {
             break;
         }
         else {
             cout << "Invalid choice!!" << endl;
         }
-    } while (answer != 3);
+    } while (answer != 4);
     saveservices();
 }
+
 
 void loadParts() {
     ifstream file("parts.txt");
@@ -320,11 +331,17 @@ void parts_edit() {
     cout << "<--- Welcome to the Parts section --->" << endl;
     int answer;
     do {
-        cout << " 1 - Add a Part : \n ";
-        cout << " 2 - Update a Part : \n ";
-        cout << " 3 - Exit \n ";
+        cout << " [1] - Dispalay Parts \n";
+        cout << " [2] - Add a Part \n";
+        cout << " [3] - Update a Part \n";
+        cout << " [4] - Exit \n";
+        cout << "Enter your choice : ";
         cin >> answer;
         if (answer == 1) {
+            display_parts();
+            cout << "-------------------------------------" << endl;
+        }
+        else if (answer == 2) {
             if (partsCount >= MAX_PARTS) {
                 cout << "Maximum parts reached!" << endl;
                 continue;
@@ -364,7 +381,7 @@ void parts_edit() {
             cout << "Model  : " << parts[partsCount - 1].applicableModels[0] << "\n";
             cout << "----------------------------------------\n";
         }
-        else if (answer == 2) {
+        else if (answer == 3) {
             string partName, model;
 
             display_parts();
@@ -443,11 +460,13 @@ void parts_edit() {
                 cout << "Part not found with the name '" << partName << "' and model '" << model << "'.\n";
             }
         }
-        else if (answer != 3) {
+        else if (answer != 4) {
             cout << "Invalid choice!!";
         }
-    } while (answer != 3);
+    } while (answer != 4);
+    saveParts();
 }
+
 
 void loadschedule() {
     std::ifstream inFile("schedule.txt");
@@ -584,10 +603,18 @@ void schedule_edit() {
     cout << "<--- Welcome to Maintenance Schedule --->" << endl;
     int answer;
     do {
-        cout << "[1] Add\n" << "[2] Update\n" << "[3] Quit\n";
+        cout << " [1] - Display Schedule \n";
+        cout << " [2] - Add Mentenance \n";
+        cout << " [3] - Update a Part or a Service \n";
+        cout << " [4] - Exit \n";
+        cout << "Enter your choice : ";
         cin >> answer;
 
         if (answer == 1) {
+            displaySchedules();
+            cout << "-------------------------------------" << endl;
+        }
+        else if (answer == 2) {
             if (schedulesCount >= MAX_SCHEDULES) {
                 cout << "Maximum schedules reached!" << endl;
                 continue;
@@ -634,7 +661,7 @@ void schedule_edit() {
             saveschedule();
             displaySchedules();
         }
-        else if (answer == 2) {
+        else if (answer == 3) {
             int answer;
 
             displaySchedules();
@@ -713,7 +740,10 @@ void schedule_edit() {
             }
             saveschedule();
         }
-    } while (answer != 3);
+        else if (answer != 4) {
+            cout << "Invalid choice!!";
+        }
+    } while (answer != 4);
 }
 
 float updateTaxRate() {
