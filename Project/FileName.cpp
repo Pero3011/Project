@@ -5,9 +5,7 @@
 
 //Extra logic libraries
 #include <sstream>
-#include <cctype>
 #include <algorithm>
-#include <limits>
 
 //UI libraries
 #include <iomanip>
@@ -16,41 +14,44 @@
 using namespace std;
 
 //Global vars
-int MAX_PARTS = 50; 
-int MAX_MODELS = 50;  
-int MAX_SERVICES = 50; 
-int MAX_SCHEDULES = 50; 
+int MAX_PARTS = 50;
+int MAX_MODELS = 50;
+int MAX_SERVICES = 50;
+int MAX_SCHEDULES = 50;
 int partsCount = 0;
 int servicesCount = 0;
 int schedulesCount = 0;
+float taxRate = 0.15;
 
 //Structs
 struct part {
     string name;
     double cost;
-    string* applicableModels = new string[MAX_MODELS];
+    string* Models = new string[MAX_MODELS];
     int modelCount = 0;
+    float partlabor;
 };
 part* parts = new part[MAX_PARTS];
 
 struct service {
     string names;
     float cost;
+    float servlabor;
 };
-service* services = new service[MAX_SERVICES]; 
+service* services = new service[MAX_SERVICES];
 
 struct schedule {
     string model;
     int year;
     int mileage;
     int months;
-    string* partNames = new string[MAX_PARTS]; 
+    string* partNames = new string[MAX_PARTS];
     int partNamesCount = 0;
-    string* serviceNames = new string[MAX_SERVICES]; 
+    string* serviceNames = new string[MAX_SERVICES];
     int serviceNamesCount = 0;
 };
 
-schedule* schedules = new schedule[MAX_SCHEDULES]; 
+schedule* schedules = new schedule[MAX_SCHEDULES];
 
 
 
@@ -64,11 +65,18 @@ void saveschedule();
 
 //Admin fn declaration
 void parts_edit();
+void display_parts();
 void services_edit();
 void displayServices();
 float updateTaxRate();
 void schedule_edit();
 void displaySchedules();
+
+//User fn declaration
+void user_input();
+void breakdown(string& car_model, int& model_year, int& mileage, int& months);
+void promo(float& total_price,float& taxRate);
+void cost_estimate(float& total_price);
 
 //System fn declaration
 int  login(string username, string password);
@@ -93,19 +101,13 @@ void setColor(int color) {
 
 
 
-//User fn declaration
-//void breakdown(parts p[], service s[], Maintenance m[], car c[], int size_p, int size_s, int size_m, int size_c, float& tax, parts p_info[], service s_info[]);
-//void user_input(string& model_name, int& model_year, int& mileage, int& month);
-//void cost_estimate(Maintenance m[], parts p[], service s[], int size_m, string model_name, int model_year, int mileage, int month,
-//  parts p_info[], service s_info[], int p_size, int s_size, int sizep, int sizes, float& tax, float totallabor);
-
 int main()
 {
     loadservices();
     loadschedule();
     loadParts();
     list1();
-    
+
 
 
     // Clean up dynamic memory
@@ -156,6 +158,12 @@ void list1() {
                 adminMenu(); // Admin
             }
         }
+
+        else if(choice == 2)
+        {
+            user_input();
+        }
+
         else if (choice == 3) {
             cout << "Exiting...\n";
             exit(0);
@@ -191,7 +199,8 @@ void saveservices() {
     file.close();
 }
 void displayServices() {
-    if (servicesCount == 0) {
+    if (servicesCount == 0) 
+    {
         cout << "No services available.\n";
         return;
     }
@@ -201,7 +210,8 @@ void displayServices() {
     cout << "Service Name\t\t\tCost\n";
     cout << "-------------------------------------\n";
 
-    for (int i = 0; i < servicesCount; i++) {
+    for (int i = 0; i < servicesCount; i++) 
+    {
         cout << left << setw(30) << services[i].names
             << "LE " << fixed << setprecision(2) << services[i].cost << endl;
     }
@@ -212,7 +222,8 @@ void displayServices() {
 void services_edit() {
     cout << "<--- Welcome to the Services section --->" << endl;
     int answer;
-    do {
+    do 
+    {
         cout << " [1] - Dispalay Services \n";
         cout << " [2] - Add a Service \n";
         cout << " [3] - Update a Service \n";
@@ -254,13 +265,20 @@ void services_edit() {
             string answer;
             displayServices();
 
-            if (servicesCount == 0) { continue; }
+            if (servicesCount == 0) 
+            { 
+                continue; 
+            }
+
             cout << "Choose a service to update by its name:\n";
             cin.ignore();    // Clear the input buffer
             getline(cin, answer);
             transform(answer.begin(), answer.end(), answer.begin(), ::tolower);
 
+
+
             bool found = false;
+
             for (int i = 0; i < servicesCount; i++) {
                 if (answer == services[i].names) {
                     float cost_update;
@@ -287,27 +305,36 @@ void services_edit() {
     saveservices();
 }
 
-
 void loadParts() {
     ifstream file("parts.txt");
     if (!file) return;
+
     while (file >> ws && !file.eof()) {
+
         getline(file, parts[partsCount].name, '|');
+
         file >> parts[partsCount].cost;
         file.ignore();
+
         string modelsLine;
-        getline(file, modelsLine);
-        splitString(modelsLine, ',', parts[partsCount].applicableModels, parts[partsCount].modelCount);
+        getline(file, modelsLine, '|');
+
+        splitString(modelsLine, ',', parts[partsCount].Models, parts[partsCount].modelCount);
+
+        file >> parts[partsCount].partlabor;
+
         partsCount++;
     }
+
     file.close();
 }
 void saveParts() {
     ofstream file("parts.txt");
     for (int i = 0; i < partsCount; i++) {
+        transform(parts[i].name.begin(), parts[i].name.end(), parts[i].name.begin(), ::tolower); //transform any string to lower case to avoid user errors
         file << parts[i].name << '|' << parts[i].cost << '|';
         for (int j = 0; j < parts[i].modelCount; j++) {
-            file << parts[i].applicableModels[j];
+            file << parts[i].Models[j];
             if (j != parts[i].modelCount - 1) file << ',';
         }
         file << '\n';
@@ -315,17 +342,34 @@ void saveParts() {
     file.close();
 }
 void display_parts() {
-    for (int i = 0; i < partsCount; i++) {
-        cout << parts[i].name << "\t| " << parts[i].cost << "\t |";
-
-        int cnt = 0;
-        while (cnt < parts[i].modelCount && parts[i].applicableModels[cnt] != "") {
-            if (cnt > 0) cout << " , ";
-            cout << parts[i].applicableModels[cnt];
-            cnt++;
-        }
-        cout << endl;
+    if (partsCount == 0) {
+        cout << "No services available.\n";
+        return;
     }
+
+    cout << "\n=== List of Parts ===\n";
+    cout << string(80, '-') << "\n";
+    cout << left << setw(20) << "Part Name" << setw(15) << "Cost"
+        << setw(30) << "Compatible Models" << "Labor" << "\n";
+    cout << string(80, '-') << "\n";
+
+    for (int i = 0; i < partsCount; i++) {
+        cout << left << setw(20) << parts[i].name
+            << fixed << setprecision(2) << setw(15) << parts[i].cost;
+
+        // Build models string first
+        string modelsStr;
+        for (int j = 0; j < parts[i].modelCount; j++) {
+            if (j > 0) modelsStr += ", ";
+            modelsStr += parts[i].Models[j];
+        }
+
+        cout << setw(30) << modelsStr
+            << fixed << parts[i].partlabor << endl;
+    }
+
+    cout << string(80, '-') << "\n";
+    cout << "Total Services: " << partsCount << "\n\n";
 }
 void parts_edit() {
     cout << "<--- Welcome to the Parts section --->" << endl;
@@ -339,7 +383,6 @@ void parts_edit() {
         cin >> answer;
         if (answer == 1) {
             display_parts();
-            cout << "-------------------------------------" << endl;
         }
         else if (answer == 2) {
             if (partsCount >= MAX_PARTS) {
@@ -355,7 +398,7 @@ void parts_edit() {
             getline(cin, name);
 
             cout << "Enter Part Cost: ";
-            double cost;
+            float cost;
             while (!(cin >> cost) || cost < 0) {
                 cout << "Invalid input. Please enter a valid positive cost: ";
                 cin.clear();
@@ -363,23 +406,45 @@ void parts_edit() {
             }
 
             cin.ignore();
-            cout << "Enter Applicable Model: ";
+            cout << "Enter Applicable Model: (Do not put spaces and separate them with commma)";
             string model;
             getline(cin, model);
 
+
+            cout << "Enter Part Labor: ";
+            float lab;
+            while (!(cin >> lab) || lab < 0) {
+                cout << "Invalid input. Please enter a valid positive labor: ";
+                cin.clear();
+                cin.ignore();
+            }
             parts[partsCount].name = name;
             parts[partsCount].cost = cost;
-            parts[partsCount].applicableModels[0] = model;
+            parts[partsCount].Models[0] = model;
             parts[partsCount].modelCount = 1;
+            parts[partsCount].partlabor = lab;
 
-            partsCount++;
+
+
+
 
             cout << "\nPart added successfully ! \n";
             cout << "----------------------------------------\n";
-            cout << "Name   : " << parts[partsCount - 1].name << "\n";
-            cout << "Cost   : " << fixed << setprecision(2) << parts[partsCount - 1].cost << " L.E\n";
-            cout << "Model  : " << parts[partsCount - 1].applicableModels[0] << "\n";
+            cout << "Name   : " << parts[partsCount].name << "\n";
+            cout << "Cost   : " << fixed << setprecision(2) << parts[partsCount].cost << " L.E\n";
+            cout << "Model  : " << parts[partsCount].Models[0] << "\n";
+            cout << "Part labor   : " << fixed << setprecision(2) << parts[partsCount].partlabor << " L.E\n";
             cout << "----------------------------------------\n";
+
+            if (!model.empty()) {
+                parts[partsCount].modelCount = 0;
+                for (int i = 0; i < MAX_MODELS; ++i)
+                    parts[partsCount].Models[i] = "";
+
+                splitString(model, ',', parts[partsCount].Models, parts[partsCount].modelCount);
+            }
+            partsCount++;
+
         }
         else if (answer == 3) {
             string partName, model;
@@ -408,8 +473,8 @@ void parts_edit() {
             for (int i = 0; i < partsCount; ++i) {
                 if (parts[i].name == partName) {
                     int cnt = 0;
-                    while (cnt < parts[i].modelCount && parts[i].applicableModels[cnt] != "") {
-                        if (parts[i].applicableModels[cnt] == model) {
+                    while (cnt < parts[i].modelCount && parts[i].Models[cnt] != "") {
+                        if (parts[i].Models[cnt] == model) {
                             found = true;
                             wanted = i;
                             break;
@@ -433,7 +498,7 @@ void parts_edit() {
                 string costInput;
                 getline(cin, costInput);
                 if (!costInput.empty()) {
-                    double newcost = stod(costInput);
+                    float newcost = stod(costInput);
                     if (newcost > 0) {
                         parts[wanted].cost = newcost;
                     }
@@ -449,11 +514,24 @@ void parts_edit() {
                 if (!newmodel.empty()) {
                     parts[wanted].modelCount = 0;
                     for (int i = 0; i < MAX_MODELS; ++i)
-                        parts[wanted].applicableModels[i] = "";
+                        parts[wanted].Models[i] = "";
 
-                    splitString(newmodel, ',', parts[wanted].applicableModels, parts[wanted].modelCount);
+                    splitString(newmodel, ',', parts[wanted].Models, parts[wanted].modelCount);
                 }
 
+
+                cout << "Enter new Part Labor (or press Enter to keep it unchanged): ";
+                string labInput;
+                getline(cin, labInput);
+                if (!labInput.empty()) {
+                    float newlab = stod(labInput);
+                    if (newlab > 0) {
+                        parts[wanted].partlabor = newlab;
+                    }
+                    else {
+                        cout << "Invalid cost input.\n";
+                    }
+                }
                 cout << "\nPart updated successfully!\n";
             }
             else {
@@ -466,7 +544,6 @@ void parts_edit() {
     } while (answer != 4);
     saveParts();
 }
-
 
 void loadschedule() {
     std::ifstream inFile("schedule.txt");
@@ -563,16 +640,19 @@ void displaySchedules() {
     }
 
     cout << "\n=== Maintenance Schedules ===\n";
-
     for (int i = 0; i < schedulesCount; i++) {
-        cout << "\nSchedule #" << i + 1 << "\n";
-        cout << "---------------------------------\n";
-        cout << "Model: " << schedules[i].model << "\n";
-        cout << "Year: " << schedules[i].year << "\n";
-        cout << "Mileage: " << schedules[i].mileage << " km\n";
-        cout << "Interval: Every " << schedules[i].months << " months\n";
 
-        // Display parts
+        cout << string(80, '-') << "\n";
+        cout << left << setw(15) << "Schedule #" << setw(20) << "Model" << setw(10) << "Year" << setw(15) << "Mileage" << setw(15) << "Interval" << "\n";
+        cout << string(80, '-') << "\n";
+
+        cout << left << setw(15) << ("#" + to_string(i + 1))
+            << setw(20) << schedules[i].model
+            << setw(10) << schedules[i].year
+            << setw(15) << (to_string(schedules[i].mileage) + " km")
+            << setw(15) << ("Every " + to_string(schedules[i].months) + " months")
+            << "\n";
+
         cout << "\nParts to Replace:\n";
         if (schedules[i].partNamesCount == 0) {
             cout << " - None\n";
@@ -583,7 +663,6 @@ void displaySchedules() {
             }
         }
 
-        // Display services
         cout << "\nServices to Perform:\n";
         if (schedules[i].serviceNamesCount == 0) {
             cout << " - None\n";
@@ -594,7 +673,7 @@ void displaySchedules() {
             }
         }
 
-        cout << "---------------------------------\n";
+        cout << endl;
     }
 
     cout << "\nTotal Schedules: " << schedulesCount << "\n\n";
@@ -635,8 +714,11 @@ void schedule_edit() {
             cin >> partscounter;
 
             string partname;
+
             display_parts();
+
             cin.ignore();   // Clear the input buffer
+
             for (int i = 0; i < partscounter && newEntry.partNamesCount < MAX_PARTS; i++) {
                 cout << "Enter part name #" << i + 1 << ": ";
                 getline(cin, partname);
@@ -746,17 +828,162 @@ void schedule_edit() {
     } while (answer != 4);
 }
 
+void saveTax()
+{
+    ofstream file("tax.txt");
+    file << taxRate;
+    file.close();
+}
 float updateTaxRate() {
-    float taxRate = 0.15;
     cout << "Current Tax Rate: " << taxRate * 100 << "%\n";
-    cout << "Enter New Tax Rate (%): ";
-    float newTax;
-    cin >> newTax;
-    taxRate = newTax / 100; // Convert percentage to decimal
-    cout << "Tax Rate Updated Successfully to " << taxRate * 100 << "%\n";
-    return taxRate;
+
+    char answer;
+    cout << "Would you like to update it[Y/N]: ";
+    cin >> answer;
+    if (answer=='Y' || answer == 'y')
+    {
+        cout << "Enter New Tax Rate (%): ";
+        float newTax;
+        cin >> newTax;
+        taxRate = newTax / 100; // Convert percentage to decimal
+        cout << "Tax Rate Updated Successfully to " << taxRate * 100 << "%\n";
+        return taxRate;
+    }
+    else if (answer == 'N' || answer == 'n')
+    {
+        cout << "Exiting...\n";
+    }
+    else
+    {
+        cout << "Invalid choice!\n";
+    }
+
 }
 //End admin fn definition
+
+//Start user functions
+void promo(float& total_price, float& tax)   //Bonus Function
+{
+    if (total_price >= 1000) {
+        total_price = total_price * 0.95;
+        cout << " dicount \t" << "|" << "5%" << endl;
+    }
+    else if (total_price >= 1300) {
+        total_price = total_price * 0.90;
+        cout << " dicount \t" << "|" << "10%" << endl;
+    }
+    else {
+        total_price = total_price * 0.85;
+        cout << " dicount \t" << "|" << "15%" << endl;
+    }
+
+}
+void cost_estimate(float& total_price) {
+
+    float total_labor = 0;
+    for (int l = 0; l < schedulesCount; l++) {
+
+
+        for (int a = 0; a < schedules[l].partNamesCount; a++) {
+
+            for (int p3 = 0; p3 < partsCount; p3++) {
+
+                if (schedules[l].partNames[a] == parts[p3].name) {
+
+                    total_labor += parts[p3].partlabor;
+
+                }
+
+            }
+
+        }
+
+        for (int b = 0; b < servicesCount; b++) {
+
+            for (int s3 = 0; s3 < servicesCount; s3++) {
+
+                if (schedules[l].serviceNames[b] == services[s3].names) {
+
+                    total_labor += services[s3].servlabor;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    float tax = total_price * taxRate;
+
+    cout << "Tax\t" << "|" << tax<< endl;
+    //cout << "labor\t" << "|" << total_labor << endl;
+    cout << "Total\t" << "|" <<  total_price+taxRate << endl;
+
+}
+void breakdown(string& car_model, int& model_year, int& mileage, int& months) {
+
+    float total_price = 0;
+
+    for (int i = 0; i < schedulesCount; i++) {
+        if (mileage == schedules[i].mileage && months == schedules[i].months)
+        {
+
+            cout << "Parts Needed to be replaced:\n"; 
+            for (int p = 0; p < schedules[i].partNamesCount; p++)
+            {
+                cout << schedules[i].partNames[p] << "\t|";
+                for (int p2 = 0; p2 < partsCount; p2++) 
+                {
+                    if (schedules[i].partNames[p] == parts[p2].name) 
+                    {
+                        cout << parts[p2].cost<<endl;
+                        total_price += parts[p2].cost;
+                        break;
+                    }
+                }
+            }
+
+            cout << "Services to perform:\n";
+            for (int s = 0; s < schedules[i].serviceNamesCount; s++)
+            {
+                cout << schedules[i].serviceNames[s] << "\t|";
+                for (int s2 = 0; s2 < servicesCount; s2++)
+                {
+                    if (schedules[i].serviceNames[s] == services[s2].names)
+                    {
+                        cout << services[s2].cost<<endl;
+                        total_price += services[s2].cost;
+                    }
+                }
+            }
+        }
+    }
+    promo(total_price, taxRate);
+    cost_estimate(total_price);
+}
+void user_input() {
+    displaySchedules();
+    string car_model;
+    int model_year, mileage, months;
+
+    cout << "Enter the information about the car:\n";
+
+    cout << "Car Model: ";
+    cin >> car_model;
+
+    cout << "Year: ";
+    cin >> model_year;
+
+    cout << "Mileage: ";
+    cin >> mileage;
+
+    cout << "months: ";
+    cin >> months;
+
+    breakdown(car_model, model_year, mileage, months);
+}
+//End user functions
 
 void adminMenu() {
     while (true) {
@@ -793,6 +1020,28 @@ void adminMenu() {
 }
 
 void searchSystem() {
-    // Implementation of search functionality would go here
-    cout << "Search functionality not yet implemented." << endl;
+    cout << "\n=============== Search System ===============\n";
+    string carModel;
+    cout << "Enter the car model: ";
+    cin >> carModel;
+    transform(carModel.begin(), carModel.end(), carModel.begin(), ::toupper); //by7wel kolo le upper case
+    cout << "\nSearching for parts and services for model: " << carModel << "\n";
+    cout << "---------------------------------------------\n";
+    bool found = false;
+    for (int i = 0; i < partsCount; i++) {// hy3ady 3la kol parts
+        for (int j = 0; j < parts[i].modelCount; j++) {// hya3dy 3la  kol el models
+            if (parts[i].Models[j] == carModel) {
+                cout << "Part Name: \t" << parts[i].name << "\tCost:\t " << fixed << setprecision(2) << parts[i].cost << " L.E\n";
+                found = true;
+
+            }
+        }
+
+
+    }
+    if (!found) {
+        cout << "No parts found for this model.\n";
+    }
+    cout << "---------------------------------------------\n";
+
 }
